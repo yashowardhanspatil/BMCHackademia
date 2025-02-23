@@ -6,6 +6,7 @@ from langchain_groq import ChatGroq
 from langchain_experimental.agents import create_pandas_dataframe_agent
 from langchain_core.prompts import PromptTemplate
 from langchain.schema.runnable import RunnableMap
+import time  # For progress bar simulation
 
 # Load environment variables
 load_dotenv()
@@ -61,10 +62,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Dataset Preview
-st.subheader("📜 Dataset Preview")
-st.dataframe(df.head())
-
 # Dropdown for Chatbot Selection
 chatbot_choice = st.selectbox("Choose Chatbot:", ["📌 Static Info Bot", "📊 CSV Analysis Bot"])
 
@@ -88,7 +85,7 @@ csv_questions = [
 # Select question from a scrollable list
 st.subheader("💡 Suggested Questions")
 
-if chatbot_choice == "📌ML Info Bot":
+if chatbot_choice == "📌 Static Info Bot":
     selected_question = st.selectbox("Select a predefined question:", ["Type your own"] + static_questions)
 
 elif chatbot_choice == "📊 CSV Analysis Bot":
@@ -101,8 +98,9 @@ if selected_question and selected_question != "Type your own":
 else:
     user_query = st.text_input("Ask a question:")
 
-if chatbot_choice == "📌 Static Info Bot":
-    if user_query:
+# Chatbot Response Handling
+if user_query:
+    if chatbot_choice == "📌 Static Info Bot":
         with st.spinner("🤖 Thinking... Please wait"):
             try:
                 response = chat_chain.invoke({"question": user_query})
@@ -112,15 +110,20 @@ if chatbot_choice == "📌 Static Info Bot":
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
 
-elif chatbot_choice == "📊 CSV Analysis Bot":
-    if user_query:
-        with st.spinner("📊 Analyzing data... Please wait"):
-            try:
-                response = agent.run(user_query)
-                st.success("### 📊 Data Analysis Response:")
-                st.write(response)
-            except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
+    elif chatbot_choice == "📊 CSV Analysis Bot":
+        progress_bar = st.progress(0)  # Initialize progress bar
+        for percent_complete in range(1, 101, 10):
+            time.sleep(0.1)  # Simulating processing time
+            progress_bar.progress(percent_complete)  # Updating progress bar
+
+        try:
+            response = agent.run(user_query)
+            progress_bar.empty()  # Remove progress bar after completion
+            st.success("### 📊 Data Analysis Response:")
+            st.write(response)
+        except Exception as e:
+            progress_bar.empty()  # Ensure progress bar disappears on error
+            st.error(f"An error occurred: {str(e)}")
 
 # Footer
 st.markdown("---")
